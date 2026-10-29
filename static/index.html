@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rishi Bharadwaj Quantum Academy (RBQA)</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Configuration for Custom Theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            900: '#0a192f',
+                            800: '#112240',
+                            700: '#233554',
+                        },
+                        cyan: {
+                            400: '#64ffda',
+                            500: '#00e676', // Teal/Cyan accent
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles for elements that need fine-tuning */
+        body {
+            background-color: #0a192f;
+            color: #ccd6f6;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #e6f1ff;
+        }
+        .text-accent {
+            color: #64ffda;
+        }
+        .bg-accent {
+            background-color: #64ffda;
+        }
+        .border-accent {
+            border-color: #64ffda;
+        }
+        
+        /* Glassmorphism for Navbar */
+        .glass-nav {
+            background: rgba(10, 25, 47, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Quantum Particle Canvas Canvas */
+        #quantum-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Section utilities */
+        .section-container {
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Card Hover Effects - Enhanced */
+        .course-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(100, 255, 218, 0.1);
+        }
+        .course-card:hover {
+            transform: scale(1.03) translateY(-5px);
+            box-shadow: 0 15px 35px -5px rgba(100, 255, 218, 0.3), 0 0 15px rgba(100, 255, 218, 0.1);
+            border-color: rgba(100, 255, 218, 0.5);
+            z-index: 20;
+        }
+
+        /* Scroll Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .delay-100 { transition-delay: 100ms; }
+        .delay-200 { transition-delay: 200ms; }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-400 selection:text-navy-900">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 transition-all duration-500 bg-transparent" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-24 transition-all duration-500" id="nav-inner">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="#" class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full border-2 border-accent flex items-center justify-center">
+                            <i class="fa-solid fa-atom text-accent text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-xl tracking-tight block leading-none">RBQA</span>
+                            <span class="text-[10px] text-slate-400 tracking-wider uppercase">Quantum Academy</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="text-sm font-medium hover:text-accent transition-colors">Home</a>
+                    <a href="#about" class="text-sm font-medium hover:text-accent transition-colors">About Us</a>
+                    <a href="#courses" class="text-sm font-medium hover:text-accent transition-colors">Courses</a>
+                    <a href="#workshops" class="text-sm font-medium hover:text-accent transition-colors">Workshops</a>
+                    <a href="#contact" class="px-5 py-2.5 border border-accent text-accent rounded-md hover:bg-accent/10 transition-all text-sm font-medium">Contact Us</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-slate-300 hover:text-white focus:outline-none">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-navy-800 border-t border-slate-700/50 absolute w-full">
+            <div class="px-4 pt-2 pb-6 space-y-2 shadow-xl">
+                <a href="#home" class="block px-3 py-3 rounded-md text-base font-medium hover:bg-navy-700 hover:text-accent">Home</a>
+                <a href="#about" class="block px-3 py-3 rounded-md text-base font-medium hover:bg-navy-700 hover:text-accent">About Us</a>
+                <a href="#courses" class="block px-3 py-3 rounded-md text-base font-medium hover:bg-navy-700 hover:text-accent">Courses</a>
+                <a href="#workshops" class="block px-3 py-3 rounded-md text-base font-medium hover:bg-navy-700 hover:text-accent">Workshops</a>
+                <a href="#contact" class="block px-3 py-3 rounded-md text-base font-medium text-accent hover:bg-navy-700">Contact Us</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="relative min-h-screen flex items-center pt-20 overflow-hidden bg-navy-900">
+        <!-- Canvas for Quantum Network Background -->
+        <canvas id="quantum-canvas"></canvas>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full section-container">
+            <div class="max-w-3xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-accent text-sm font-medium mb-6">
+                    <i class="fa-solid fa-flask"></i>
+                    <span>Practical Science & Technology</span>
+                </div>
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight">
+                    From Classroom Physics to <br/>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Quantum Technologies</span>
+                </h1>
+                <h2 class="text-xl md:text-2xl font-medium text-slate-300 mb-4">
+                    Explore. Experiment. Understand. Innovate.
+                </h2>
+                <p class="text-base md:text-lg text-slate-400 mb-10 max-w-2xl leading-relaxed">
+                    Discover the fascinating journey from fundamental physics experiments to quantum mechanics, computing, communication, and sensing. Build your skills through practical demonstrations, interactive simulations, and research-oriented activities.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="#courses" class="inline-flex justify-center items-center px-6 py-3.5 border border-transparent text-base font-semibold rounded-md text-navy-900 bg-accent hover:bg-cyan-300 transition-colors">
+                        Explore Our Programs
+                    </a>
+                    <a href="#workshops" class="inline-flex justify-center items-center px-6 py-3.5 border border-accent text-base font-semibold rounded-md text-accent hover:bg-accent/10 transition-colors">
+                        Register for a Workshop
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center animate-bounce z-10">
+            <span class="text-xs text-slate-400 mb-2 tracking-widest uppercase">Scroll</span>
+            <i class="fa-solid fa-arrow-down text-accent"></i>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-24 bg-navy-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="text-center mb-16">
+                <h2 class="text-sm font-bold text-accent tracking-widest uppercase mb-2">Our Mission & Vision</h2>
+                <h3 class="text-3xl md:text-4xl font-bold">About The Academy</h3>
+                <div class="w-20 h-1 bg-accent mx-auto mt-6 rounded"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
+                <div>
+                    <h4 class="text-2xl font-semibold mb-6 text-white">Bridging the Gap Between Theory and Reality</h4>
+                    <p class="text-slate-400 leading-relaxed mb-6">
+                        Rishi Bharadwaj Quantum Academy aims to create a learning environment where students can explore the relationship between fundamental physics and emerging quantum technologies. 
+                    </p>
+                    <p class="text-slate-400 leading-relaxed mb-6">
+                        The academy focuses on practical experiments, conceptual learning, computational simulations, workshops, and introductory research projects. Our approach is designed to help learners understand not only the fundamental principles of physics but also how these principles contribute to the development of modern technologies.
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-check-circle text-accent mt-1 mr-3"></i>
+                            <span class="text-slate-300">Hands-on learning in fundamental physics</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-check-circle text-accent mt-1 mr-3"></i>
+                            <span class="text-slate-300">Python-based scientific & quantum simulations</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-check-circle text-accent mt-1 mr-3"></i>
+                            <span class="text-slate-300">Accessible to diverse academic backgrounds</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="relative">
+                    <div class="absolute inset-0 border-2 border-accent rounded-lg transform translate-x-4 translate-y-4"></div>
+                    <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2070&auto=format&fit=crop" alt="Quantum Physics Concept" class="relative rounded-lg w-full h-auto object-cover shadow-2xl z-10 border border-slate-700">
+                </div>
+            </div>
+
+            <!-- Founder Profile -->
+            <div class="bg-navy-900 rounded-2xl p-8 md:p-12 border border-slate-700/50 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-16 opacity-5 pointer-events-none">
+                    <i class="fa-solid fa-microscope text-9xl text-white"></i>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-10 items-center relative z-10">
+                    <div class="md:col-span-4 flex justify-center">
+                        <div class="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-4 border-navy-800 shadow-[0_0_0_2px_rgba(100,255,218,0.5)]">
+                            <!-- Placeholder for Founder Image -->
+                            <img src="https://placehold.co/400x400/112240/64ffda?text=Dr.+Shukla" alt="Dr. Pawan Kumar Shukla" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                    <div class="md:col-span-8">
+                        <h2 class="text-sm font-bold text-accent tracking-widest uppercase mb-1">About the Founder</h2>
+                        <h3 class="text-3xl font-bold text-white mb-2">Dr. Pawan Kumar Shukla</h3>
+                        <p class="text-slate-400 font-medium mb-6">Postdoctoral Fellow at IIT Roorkee | Ph.D. MNNIT Allahabad</p>
+                        
+                        <p class="text-slate-300 leading-relaxed mb-4">
+                            Dr. Pawan holds a Ph.D. from MNNIT Allahabad, an M.Tech. from Allahabad University, and a B.Tech. from AMIETE, New Delhi. 
+                        </p>
+                        <p class="text-slate-300 leading-relaxed mb-4">
+                            His technical interests span across RF and microwave engineering, cryogenic low-noise amplifiers, quantum devices, electromagnetic systems, and emerging quantum technologies. 
+                        </p>
+                        <p class="text-slate-300 leading-relaxed italic text-sm border-l-4 border-accent pl-4">
+                            "Through practical physics education and interdisciplinary learning, the goal is to help students understand how fundamental scientific principles connect with modern technological applications."
+                        </p>
+                        <p class="mt-4 text-[11px] text-slate-500">
+                            * Note: The founder's profile is an individual academic biography. The academy is an independent initiative.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section id="courses" class="py-24 bg-navy-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="text-center mb-16">
+                <h2 class="text-sm font-bold text-accent tracking-widest uppercase mb-2">Curriculum</h2>
+                <h3 class="text-3xl md:text-4xl font-bold">Courses & Training Programs</h3>
+                <p class="mt-4 text-slate-400 max-w-2xl mx-auto">Structured pathways bridging fundamental theories with cutting-edge technological applications.</p>
+                <div class="w-20 h-1 bg-accent mx-auto mt-6 rounded"></div>
+            </div>
+
+            <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <p class="text-slate-500 col-span-full text-center">Loading courses…</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Workshops Section -->
+    <section id="workshops" class="py-24 bg-navy-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-slate-700 pb-6">
+                <div>
+                    <h2 class="text-sm font-bold text-accent tracking-widest uppercase mb-2">Live Training</h2>
+                    <h3 class="text-3xl md:text-4xl font-bold">Workshops & Events</h3>
+                </div>
+                <p class="text-slate-400 max-w-md mt-4 md:mt-0 text-right md:text-left">
+                    Join our interactive sessions designed to provide hands-on exposure to both fundamental physics and quantum applications.
+                </p>
+            </div>
+
+            <div id="workshops-list" class="space-y-6">
+                <p class="text-slate-500 text-center">Loading workshops…</p>
+            </div>
+
+            <div class="mt-10 text-center">
+                <a href="#" class="inline-flex items-center text-accent hover:text-white transition-colors">
+                    View full event calendar <i class="fa-solid fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-24 bg-navy-900 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="text-center mb-16">
+                <h2 class="text-sm font-bold text-accent tracking-widest uppercase mb-2">Get In Touch</h2>
+                <h3 class="text-3xl md:text-4xl font-bold">Contact & Registration</h3>
+                <div class="w-20 h-1 bg-accent mx-auto mt-6 rounded"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                
+                <!-- Contact Info -->
+                <div>
+                    <h4 class="text-2xl font-semibold mb-6 text-white">Join the Quantum Journey</h4>
+                    <p class="text-slate-400 mb-8 leading-relaxed">
+                        Whether you are a student looking to start your journey in quantum technologies, a researcher seeking collaboration, or an educator wanting to upgrade your curriculum, we are here to assist you.
+                    </p>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-12 h-12 bg-navy-800 rounded-lg flex items-center justify-center text-accent">
+                                <i class="fa-solid fa-location-dot text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h5 class="text-white font-medium">Location</h5>
+                                <p class="text-slate-400 text-sm mt-1">Prayagraj, Uttar Pradesh, India<br/>(Online & Offline Operations)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-12 h-12 bg-navy-800 rounded-lg flex items-center justify-center text-accent">
+                                <i class="fa-solid fa-envelope text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h5 class="text-white font-medium">Email</h5>
+                                <a href="mailto:info@rbqa.in" class="text-slate-400 text-sm mt-1 hover:text-accent transition-colors">info@rbqa.in</a>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-12 h-12 bg-navy-800 rounded-lg flex items-center justify-center text-accent">
+                                <i class="fa-brands fa-whatsapp text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h5 class="text-white font-medium">WhatsApp Enquiry</h5>
+                                <p class="text-slate-400 text-sm mt-1">+91 (Number Pending)</p>
+                                <button class="mt-2 text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded transition-colors inline-flex items-center gap-2">
+                                    <i class="fa-brands fa-whatsapp"></i> Chat Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="bg-navy-800 p-8 rounded-2xl border border-slate-700/50 shadow-lg">
+                    <form id="contact-form" class="space-y-5" novalidate>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-slate-300 mb-1">Full Name *</label>
+                                <input type="text" id="name" required class="w-full bg-navy-900 border border-slate-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-slate-300 mb-1">Email Address *</label>
+                                <input type="email" id="email" required class="w-full bg-navy-900 border border-slate-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-slate-300 mb-1">Mobile Number</label>
+                                <input type="tel" id="phone" class="w-full bg-navy-900 border border-slate-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
+                            </div>
+                            <div>
+                                <label for="interest" class="block text-sm font-medium text-slate-300 mb-1">Area of Interest</label>
+                                <select id="interest" class="w-full bg-navy-900 border border-slate-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors appearance-none">
+                                    <option value="" disabled selected>Select an option</option>
+                                    <option value="course">Course Enquiry</option>
+                                    <option value="workshop">Workshop Registration</option>
+                                    <option value="research">Research / Projects</option>
+                                    <option value="other">General Enquiry</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="message" class="block text-sm font-medium text-slate-300 mb-1">Message *</label>
+                            <textarea id="message" rows="4" required class="w-full bg-navy-900 border border-slate-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors resize-none"></textarea>
+                        </div>
+                        
+                        <div id="contact-status" class="hidden text-sm rounded-md px-4 py-3" role="status"></div>
+                        <div class="pt-2">
+                            <button id="contact-submit" type="submit" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-navy-900 bg-accent hover:bg-cyan-400 focus:outline-none transition-colors">
+                                Send Message <i class="fa-solid fa-paper-plane ml-2"></i>
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-500 text-center mt-4">
+                            By submitting, you agree to our privacy policy regarding data collection.
+                        </p>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-navy-900 border-t border-slate-800 pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-12">
+                
+                <div class="col-span-1 md:col-span-1">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-atom text-accent text-2xl"></i>
+                        <span class="font-bold text-xl text-white tracking-tight block leading-none">RBQA</span>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">
+                        Inspired by India's Knowledge Heritage. Driven by Modern Science.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-slate-400 hover:text-accent transition-colors"><i class="fa-brands fa-linkedin text-xl"></i></a>
+                        <a href="#" class="text-slate-400 hover:text-accent transition-colors"><i class="fa-brands fa-twitter text-xl"></i></a>
+                        <a href="#" class="text-slate-400 hover:text-accent transition-colors"><i class="fa-brands fa-youtube text-xl"></i></a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#about" class="hover:text-accent transition-colors">About Us</a></li>
+                        <li><a href="#courses" class="hover:text-accent transition-colors">Courses</a></li>
+                        <li><a href="#workshops" class="hover:text-accent transition-colors">Workshops & Events</a></li>
+                        <li><a href="#" class="hover:text-accent transition-colors">Practical Experiments</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Resources</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#" class="hover:text-accent transition-colors">Learning Material</a></li>
+                        <li><a href="#" class="hover:text-accent transition-colors">Research Projects</a></li>
+                        <li><a href="#" class="hover:text-accent transition-colors">FAQ</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#" class="hover:text-accent transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-accent transition-colors">Terms & Conditions</a></li>
+                        <li><a href="#" class="hover:text-accent transition-colors">Refund Policy</a></li>
+                    </ul>
+                </div>
+
+            </div>
+            
+            <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-500">
+                <p>&copy; <span id="year"></span> Rishi Bharadwaj Quantum Academy. All rights reserved.</p>
+                <p class="mt-2 md:mt-0">Designed for Scientific Excellence.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // Set current year in footer
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // Mobile Menu Toggle
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        const icon = btn.querySelector('i');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+            if(menu.classList.contains('hidden')) {
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-bars');
+            } else {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-xmark');
+            }
+        });
+
+        // Close mobile menu on link click
+        menu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                menu.classList.add('hidden');
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-bars');
+            });
+        });
+
+        // Navbar Scroll Effect
+        const navbar = document.getElementById('navbar');
+        const navInner = document.getElementById('nav-inner');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('glass-nav', 'shadow-lg');
+                navInner.classList.remove('h-24');
+                navInner.classList.add('h-16');
+                navbar.style.borderBottom = '1px solid rgba(100, 255, 218, 0.1)';
+            } else {
+                navbar.classList.remove('glass-nav', 'shadow-lg');
+                navInner.classList.remove('h-16');
+                navInner.classList.add('h-24');
+                navbar.style.borderBottom = '1px solid transparent';
+            }
+        });
+
+        // --- Intersection Observer for Scroll Animations ---
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target); // Only animate once
+                }
+            });
+        }, observerOptions);
+
+        // Dynamically add reveal classes to major layout sections and observe
+        document.querySelectorAll('section > div > div.text-center, section > div > div.grid:not(#courses-grid) > div, #contact > div > div').forEach((el, index) => {
+            el.classList.add('reveal');
+            if(index % 3 === 1) el.classList.add('delay-100');
+            if(index % 3 === 2) el.classList.add('delay-200');
+            observer.observe(el);
+        });
+
+        // Animate Hero section elements immediately on load
+        document.querySelectorAll('#home .max-w-3xl > *').forEach((el, index) => {
+            el.classList.add('reveal');
+            el.style.transitionDelay = `${index * 150}ms`;
+            setTimeout(() => el.classList.add('active'), 100);
+        });
+
+        // --- Quantum Network Canvas Animation ---
+        const canvas = document.getElementById('quantum-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        let mouse = { x: null, y: null, radius: 150 };
+
+        // Mouse Event Listeners for interactive canvas
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+        window.addEventListener('mouseout', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+        
+        // Resize canvas
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = document.getElementById('home').offsetHeight;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Particle class
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.radius = Math.random() * 2 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Bounce off edges
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+
+                // Mouse interaction - particles repel from cursor
+                if (mouse.x && mouse.y) {
+                    let dx = mouse.x - this.x;
+                    let dy = mouse.y - this.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < mouse.radius) {
+                        const forceDirectionX = dx / distance;
+                        const forceDirectionY = dy / distance;
+                        const force = (mouse.radius - distance) / mouse.radius;
+                        this.x -= forceDirectionX * force * 3;
+                        this.y -= forceDirectionY * force * 3;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#64ffda'; // Accent color
+                ctx.fill();
+            }
+        }
+
+        // Initialize particles
+        function initParticles() {
+            particles = [];
+            let numParticles = Math.floor(window.innerWidth / 15); // Responsive particle count
+            if(numParticles > 100) numParticles = 100; // Cap
+            
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                // Draw connecting lines (Entanglement effect)
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 120) { // Connection radius
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(100, 255, 218, ${1 - distance / 120})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        initParticles();
+        animate();
+    </script>
+
+    <!-- Modal (course details / workshop registration) -->
+    <div id="modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div id="modal-backdrop" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+        <div class="relative bg-navy-800 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-8 shadow-2xl">
+            <button id="modal-close" class="absolute top-4 right-4 text-slate-400 hover:text-white" aria-label="Close"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="/static/site.js"></script>
+</body>
+</html>

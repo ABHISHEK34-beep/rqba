@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>RBQA Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] },
+  colors: { navy: { 900:'#0a192f', 800:'#112240', 700:'#233554' } } } } }
+</script>
+<style>
+  body { background:#0a192f; color:#ccd6f6; }
+  .accent { color:#64ffda; }
+  .inp { width:100%; background:#0a192f; border:1px solid #334155; border-radius:6px; padding:.55rem .8rem; color:#fff; }
+  .inp:focus { outline:none; border-color:#64ffda; box-shadow:0 0 0 1px #64ffda; }
+  .btn { padding:.5rem 1rem; border-radius:6px; font-weight:600; font-size:.875rem; transition:.15s; }
+  .btn-pri { background:#64ffda; color:#0a192f; } .btn-pri:hover { background:#8dffe6; }
+  .btn-sec { border:1px solid #475569; color:#e2e8f0; } .btn-sec:hover { background:#233554; }
+  .btn-del { border:1px solid #7f1d1d; color:#fca5a5; } .btn-del:hover { background:#7f1d1d33; }
+  th { text-align:left; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:#94a3b8; padding:.6rem .8rem; }
+  td { padding:.65rem .8rem; vertical-align:top; font-size:.875rem; border-top:1px solid #1e2d4a; }
+  .tab.active { color:#64ffda; border-color:#64ffda; }
+</style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+<!-- Login -->
+<div id="login-view" class="hidden min-h-screen flex items-center justify-center p-4">
+  <form id="login-form" class="bg-navy-800 border border-slate-700 rounded-2xl p-8 w-full max-w-sm space-y-4">
+    <div class="text-center mb-2">
+      <i class="fa-solid fa-atom accent text-4xl"></i>
+      <h1 class="text-xl font-bold text-white mt-3">RBQA Admin</h1>
+    </div>
+    <div><label class="block text-sm mb-1" for="l-user">Username</label><input id="l-user" class="inp" autocomplete="username" required></div>
+    <div><label class="block text-sm mb-1" for="l-pass">Password</label><input id="l-pass" type="password" class="inp" autocomplete="current-password" required></div>
+    <div id="login-err" class="hidden text-sm text-red-300"></div>
+    <button class="btn btn-pri w-full py-2.5">Sign in</button>
+    <a href="/" class="block text-center text-xs text-slate-400 hover:text-white">← Back to website</a>
+  </form>
+</div>
+
+<!-- App -->
+<div id="app-view" class="hidden">
+  <header class="bg-navy-800 border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3"><i class="fa-solid fa-atom accent text-2xl"></i>
+        <span class="font-bold text-white">RBQA Admin</span></div>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="/" target="_blank" class="text-slate-400 hover:text-white">View site <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
+        <button id="logout" class="btn btn-sec">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div id="stats" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8"></div>
+
+    <nav class="flex gap-6 border-b border-slate-700 mb-6 overflow-x-auto text-sm font-medium">
+      <button class="tab pb-3 border-b-2 border-transparent whitespace-nowrap" data-tab="messages">Messages</button>
+      <button class="tab pb-3 border-b-2 border-transparent whitespace-nowrap" data-tab="registrations">Registrations</button>
+      <button class="tab pb-3 border-b-2 border-transparent whitespace-nowrap" data-tab="courses">Courses</button>
+      <button class="tab pb-3 border-b-2 border-transparent whitespace-nowrap" data-tab="workshops">Workshops</button>
+      <button class="tab pb-3 border-b-2 border-transparent whitespace-nowrap" data-tab="settings">Settings</button>
+    </nav>
+
+    <div id="panel"></div>
+  </main>
+</div>
+
+<!-- Edit modal -->
+<div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div id="modal-bg" class="absolute inset-0 bg-black/70"></div>
+  <div class="relative bg-navy-800 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6">
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-6 right-6 z-[60] px-4 py-3 rounded-md text-sm font-medium shadow-lg"></div>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function api(url, method='GET', body) {
+  const res = await fetch(url, { method, headers: body ? {'Content-Type':'application/json'} : {}, body: body ? JSON.stringify(body) : undefined });
+  let data = {}; try { data = await res.json(); } catch(_) {}
+  if (res.status === 401 && !url.includes('/login') && !url.includes('/me')) { showLogin(); throw new Error('Session expired'); }
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function toast(msg, ok=true) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'fixed bottom-6 right-6 z-[60] px-4 py-3 rounded-md text-sm font-medium shadow-lg ' + (ok ? 'bg-emerald-500 text-navy-900' : 'bg-red-500 text-white');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), 2800);
+}
+
+function openModal(html) { $('#modal-body').innerHTML = html; $('#modal').classList.remove('hidden'); }
+function closeModal() { $('#modal').classList.add('hidden'); $('#modal-body').innerHTML = ''; }
+$('#modal-bg').addEventListener('click', closeModal);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ---------- auth ---------- */
+function showLogin() { $('#app-view').classList.add('hidden'); $('#login-view').classList.remove('hidden'); }
+async function showApp() {
+  $('#login-view').classList.add('hidden'); $('#app-view').classList.remove('hidden');
+  await loadStats(); switchTab(currentTab);
+}
+$('#login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  try {
+    await api('/api/admin/login', 'POST', { username: $('#l-user').value, password: $('#l-pass').value });
+    $('#l-pass').value = ''; $('#login-err').classList.add('hidden'); showApp();
+  } catch (err) { const el = $('#login-err'); el.textContent = err.message; el.classList.remove('hidden'); }
+});
+$('#logout').addEventListener('click', async () => { await api('/api/admin/logout', 'POST'); showLogin(); });
+
+/* ---------- stats ---------- */
+async function loadStats() {
+  const s = await api('/api/admin/stats');
+  const card = (label, val, icon, hl) => `<div class="bg-navy-800 border ${hl ? 'border-cyan-300/60' : 'border-slate-700'} rounded-xl p-4">
+    <div class="flex items-center justify-between text-slate-400 text-xs uppercase tracking-wider">${label}<i class="fa-solid ${icon}"></i></div>
+    <div class="text-3xl font-bold text-white mt-2">${val}</div></div>`;
+  $('#stats').innerHTML = card('Messages', s.messages, 'fa-envelope') + card('Unread', s.unread, 'fa-envelope-open-text', s.unread > 0)
+    + card('Registrations', s.registrations, 'fa-user-check') + card('Courses', s.courses, 'fa-book') + card('Workshops', s.workshops, 'fa-chalkboard-user');
+}
+
+/* ---------- tabs ---------- */
+let currentTab = 'messages';
+function switchTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  ({ messages: viewMessages, registrations: viewRegistrations, courses: viewCourses, workshops: viewWorkshops, settings: viewSettings })[name]();
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+const fmt = s => s ? s.replace(' ', ' · ') : '';
+const table = (head, rows) => `<div class="bg-navy-800 border border-slate-700 rounded-xl overflow-x-auto">
+  <table class="w-full"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+const empty = msg => `<div class="bg-navy-800 border border-slate-700 rounded-xl p-10 text-center text-slate-400">${msg}</div>`;
+
+/* ---------- messages ---------- */
+async function viewMessages() {
+  const list = await api('/api/admin/messages');
+  $('#panel').innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-lg font-semibold text-white">Contact messages</h2>
+    <a class="btn btn-sec" href="/api/admin/export/messages"><i class="fa-solid fa-download mr-1"></i>Export CSV</a></div>` +
+    (list.length ? table(['Received (UTC)', 'From', 'Interest', 'Message', ''], list.map(m => `
+      <tr class="${m.is_read ? 'opacity-70' : ''}">
+        <td class="whitespace-nowrap">${!m.is_read ? '<span class="inline-block w-2 h-2 rounded-full bg-cyan-300 mr-2"></span>' : ''}${esc(fmt(m.created_at))}</td>
+        <td><div class="font-medium text-white">${esc(m.name)}</div><a class="accent" href="mailto:${esc(m.email)}">${esc(m.email)}</a>${m.phone ? `<div class="text-slate-400">${esc(m.phone)}</div>` : ''}</td>
+        <td>${esc(m.interest || '-')}</td>
+        <td class="max-w-md whitespace-pre-wrap break-words">${esc(m.message)}</td>
+        <td class="whitespace-nowrap space-x-2">
+          <button class="btn btn-sec" onclick="toggleRead(${m.id}, ${!m.is_read})">${m.is_read ? 'Mark unread' : 'Mark read'}</button>
+          <button class="btn btn-del" onclick="delItem('messages', ${m.id})">Delete</button></td></tr>`).join(''))
+    : empty('No messages yet.'));
+}
+async function toggleRead(id, val) { await api(`/api/admin/messages/${id}`, 'PATCH', { is_read: val }); loadStats(); viewMessages(); }
+
+/* ---------- registrations ---------- */
+async function viewRegistrations() {
+  const list = await api('/api/admin/registrations');
+  $('#panel').innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-lg font-semibold text-white">Workshop registrations</h2>
+    <a class="btn btn-sec" href="/api/admin/export/registrations"><i class="fa-solid fa-download mr-1"></i>Export CSV</a></div>` +
+    (list.length ? table(['Registered (UTC)', 'Workshop', 'Attendee', 'Note', ''], list.map(r => `
+      <tr><td class="whitespace-nowrap">${esc(fmt(r.created_at))}</td><td>${esc(r.workshop_title)}</td>
+        <td><div class="font-medium text-white">${esc(r.name)}</div><a class="accent" href="mailto:${esc(r.email)}">${esc(r.email)}</a>${r.phone ? `<div class="text-slate-400">${esc(r.phone)}</div>` : ''}</td>
+        <td class="max-w-xs whitespace-pre-wrap break-words">${esc(r.note || '-')}</td>
+        <td><button class="btn btn-del" onclick="delItem('registrations', ${r.id})">Delete</button></td></tr>`).join(''))
+    : empty('No registrations yet.'));
+}
+
+async function delItem(kind, id) {
+  if (!confirm('Delete this entry? This cannot be undone.')) return;
+  try { await api(`/api/admin/${kind}/${id}`, 'DELETE'); toast('Deleted'); loadStats(); switchTab(currentTab); }
+  catch (e) { toast(e.message, false); }
+}
+
+/* ---------- courses ---------- */
+let courseCache = [];
+async function viewCourses() {
+  courseCache = await api('/api/admin/courses');
+  $('#panel').innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-lg font-semibold text-white">Courses</h2>
+    <button class="btn btn-pri" onclick="editCourse()"><i class="fa-solid fa-plus mr-1"></i>Add course</button></div>` +
+    (courseCache.length ? table(['Order', 'Title', 'Audience', 'Status', ''], courseCache.map(c => `
+      <tr><td>${c.sort_order}</td><td><i class="fa-solid ${esc(c.icon)} accent mr-2"></i><span class="font-medium text-white">${esc(c.title)}</span></td>
+        <td>${esc(c.audience)}</td><td>${c.published ? '<span class="text-emerald-300">Published</span>' : '<span class="text-slate-400">Hidden</span>'}</td>
+        <td class="whitespace-nowrap space-x-2"><button class="btn btn-sec" onclick="editCourse(${c.id})">Edit</button>
+          <button class="btn btn-del" onclick="delItem('courses', ${c.id})">Delete</button></td></tr>`).join('')) : empty('No courses yet.'));
+}
+function editCourse(id) {
+  const c = courseCache.find(x => x.id === id) || { title:'', audience:'', description:'', topics_text:'', icon:'fa-atom', sort_order: courseCache.length, published:true };
+  openModal(`<h3 class="text-lg font-bold text-white mb-4">${id ? 'Edit' : 'Add'} course</h3>
+    <form id="ef" class="space-y-3">
+      <div><label class="text-sm">Title *</label><input name="title" class="inp" required value="${esc(c.title)}"></div>
+      <div><label class="text-sm">Audience / level</label><input name="audience" class="inp" value="${esc(c.audience)}"></div>
+      <div><label class="text-sm">Description</label><textarea name="description" rows="3" class="inp">${esc(c.description)}</textarea></div>
+      <div><label class="text-sm">Topics (one per line; first 3 show on the card)</label><textarea name="topics_text" rows="4" class="inp">${esc(c.topics_text)}</textarea></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-sm">Font Awesome icon</label><input name="icon" class="inp" value="${esc(c.icon)}" placeholder="fa-atom"></div>
+        <div><label class="text-sm">Sort order</label><input name="sort_order" type="number" class="inp" value="${c.sort_order}"></div>
+      </div>
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="published" ${c.published ? 'checked' : ''}> Published on website</label>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" class="btn btn-sec" onclick="closeModal()">Cancel</button><button class="btn btn-pri">Save</button></div>
+    </form>`);
+  $('#ef').addEventListener('submit', e => saveForm(e, 'courses', id));
+}
+
+/* ---------- workshops ---------- */
+let wsCache = [];
+async function viewWorkshops() {
+  wsCache = await api('/api/admin/workshops');
+  $('#panel').innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-lg font-semibold text-white">Workshops</h2>
+    <button class="btn btn-pri" onclick="editWorkshop()"><i class="fa-solid fa-plus mr-1"></i>Add workshop</button></div>` +
+    (wsCache.length ? table(['Order', 'Title', 'When / Mode', 'Status', ''], wsCache.map(w => `
+      <tr><td>${w.sort_order}</td><td class="font-medium text-white">${esc(w.title)}</td><td>${esc(w.date_label)} · ${esc(w.mode)}</td>
+        <td>${esc(w.status)}${w.published ? '' : ' <span class="text-slate-400">(hidden)</span>'}</td>
+        <td class="whitespace-nowrap space-x-2"><button class="btn btn-sec" onclick="editWorkshop(${w.id})">Edit</button>
+          <button class="btn btn-del" onclick="delItem('workshops', ${w.id})">Delete</button></td></tr>`).join('')) : empty('No workshops yet.'));
+}
+function editWorkshop(id) {
+  const w = wsCache.find(x => x.id === id) || { title:'', description:'', status:'Upcoming', date_label:'TBA', mode:'Online', tags_text:'', sort_order: wsCache.length, published:true };
+  const opt = (v, list) => list.map(x => `<option ${x === v ? 'selected' : ''}>${x}</option>`).join('');
+  openModal(`<h3 class="text-lg font-bold text-white mb-4">${id ? 'Edit' : 'Add'} workshop</h3>
+    <form id="ef" class="space-y-3">
+      <div><label class="text-sm">Title *</label><input name="title" class="inp" required value="${esc(w.title)}"></div>
+      <div><label class="text-sm">Description</label><textarea name="description" rows="3" class="inp">${esc(w.description)}</textarea></div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="text-sm">Status</label><select name="status" class="inp">${opt(w.status, ['Upcoming','Planning','Completed'])}</select></div>
+        <div><label class="text-sm">Date label</label><input name="date_label" class="inp" value="${esc(w.date_label)}" placeholder="15 Dec"></div>
+        <div><label class="text-sm">Mode</label><select name="mode" class="inp">${opt(w.mode, ['Online','Offline','Hybrid'])}</select></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-sm">Tags (comma separated)</label><input name="tags_text" class="inp" value="${esc(w.tags_text)}"></div>
+        <div><label class="text-sm">Sort order</label><input name="sort_order" type="number" class="inp" value="${w.sort_order}"></div>
+      </div>
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="published" ${w.published ? 'checked' : ''}> Published on website</label>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" class="btn btn-sec" onclick="closeModal()">Cancel</button><button class="btn btn-pri">Save</button></div>
+    </form>`);
+  $('#ef').addEventListener('submit', e => saveForm(e, 'workshops', id));
+}
+
+async function saveForm(e, kind, id) {
+  e.preventDefault();
+  const f = new FormData(e.target), body = Object.fromEntries(f.entries());
+  body.published = f.has('published');
+  try {
+    await api(id ? `/api/admin/${kind}/${id}` : `/api/admin/${kind}`, id ? 'PUT' : 'POST', body);
+    closeModal(); toast('Saved'); loadStats(); switchTab(currentTab);
+  } catch (err) { toast(err.message, false); }
+}
+
+/* ---------- settings ---------- */
+function viewSettings() {
+  $('#panel').innerHTML = `<div class="bg-navy-800 border border-slate-700 rounded-xl p-6 max-w-md">
+    <h2 class="text-lg font-semibold text-white mb-4">Change password</h2>
+    <form id="pw" class="space-y-3">
+      <div><label class="text-sm">Current password</label><input id="pw-cur" type="password" class="inp" autocomplete="current-password" required></div>
+      <div><label class="text-sm">New password (min 8 characters)</label><input id="pw-new" type="password" class="inp" autocomplete="new-password" minlength="8" required></div>
+      <button class="btn btn-pri">Update password</button>
+    </form></div>`;
+  $('#pw').addEventListener('submit', async e => {
+    e.preventDefault();
+    try { await api('/api/admin/password', 'POST', { current: $('#pw-cur').value, new: $('#pw-new').value }); toast('Password updated'); e.target.reset(); }
+    catch (err) { toast(err.message, false); }
+  });
+}
+
+/* ---------- boot ---------- */
+(async () => {
+  try { await api('/api/admin/me'); showApp(); } catch (_) { showLogin(); }
+})();
+</script>
+</body>
+</html>
